@@ -42,6 +42,7 @@ export interface Filter {
   id: string;
   urlDisplay?: string;
   operator?: FilterOperator;
+  hidden?: boolean;
   input?:
     | 'text'
     | 'textarea'

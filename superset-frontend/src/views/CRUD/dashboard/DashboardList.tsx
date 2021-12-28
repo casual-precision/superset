@@ -50,6 +50,7 @@ import OmniContainer from 'src/components/OmniContainer';
 
 import Dashboard from 'src/dashboard/containers/Dashboard';
 import CertifiedBadge from 'src/components/CertifiedBadge';
+import { UserWithPermissionsAndRoles } from 'src/types/bootstrapTypes';
 import DashboardCard from './DashboardCard';
 import { DashboardStatus } from './types';
 
@@ -70,11 +71,7 @@ const CONFIRM_OVERWRITE_MESSAGE = t(
 interface DashboardListProps {
   addDangerToast: (msg: string) => void;
   addSuccessToast: (msg: string) => void;
-  user: {
-    userId: string | number;
-    firstName: string;
-    lastName: string;
-  };
+  user: UserWithPermissionsAndRoles;
 }
 
 interface Dashboard {
@@ -150,6 +147,8 @@ function DashboardList(props: DashboardListProps) {
   const canEdit = hasPerm('can_write');
   const canDelete = hasPerm('can_write');
   const canExport = hasPerm('can_export');
+
+  const isAdmin = !!props.user?.roles?.Admin;
 
   const initialSort = [{ id: 'changed_on_delta_humanized', desc: true }];
 
@@ -445,81 +444,84 @@ function DashboardList(props: DashboardListProps) {
   );
 
   const filters: Filters = useMemo(
-    () => [
-      {
-        Header: t('Owner'),
-        id: 'owners',
-        input: 'select',
-        operator: FilterOperator.relationManyMany,
-        unfilteredLabel: t('All'),
-        fetchSelects: createFetchRelated(
-          'dashboard',
-          'owners',
-          createErrorHandler(errMsg =>
-            addDangerToast(
-              t(
-                'An error occurred while fetching dashboard owner values: %s',
-                errMsg,
+    () =>
+      [
+        {
+          Header: t('Owner'),
+          id: 'owners',
+          hidden: !isAdmin,
+          input: 'select',
+          operator: FilterOperator.relationManyMany,
+          unfilteredLabel: t('All'),
+          fetchSelects: createFetchRelated(
+            'dashboard',
+            'owners',
+            createErrorHandler(errMsg =>
+              addDangerToast(
+                t(
+                  'An error occurred while fetching dashboard owner values: %s',
+                  errMsg,
+                ),
               ),
             ),
+            props.user,
           ),
-          props.user,
-        ),
-        paginate: true,
-      },
-      {
-        Header: t('Created by'),
-        id: 'created_by',
-        input: 'select',
-        operator: FilterOperator.relationOneMany,
-        unfilteredLabel: t('All'),
-        fetchSelects: createFetchRelated(
-          'dashboard',
-          'created_by',
-          createErrorHandler(errMsg =>
-            addDangerToast(
-              t(
-                'An error occurred while fetching dashboard created by values: %s',
-                errMsg,
+          paginate: true,
+        },
+        {
+          Header: t('Created by'),
+          id: 'created_by',
+          hidden: !isAdmin,
+          input: 'select',
+          operator: FilterOperator.relationOneMany,
+          unfilteredLabel: t('All'),
+          fetchSelects: createFetchRelated(
+            'dashboard',
+            'created_by',
+            createErrorHandler(errMsg =>
+              addDangerToast(
+                t(
+                  'An error occurred while fetching dashboard created by values: %s',
+                  errMsg,
+                ),
               ),
             ),
+            props.user,
           ),
-          props.user,
-        ),
-        paginate: true,
-      },
-      {
-        Header: t('Status'),
-        id: 'published',
-        input: 'select',
-        operator: FilterOperator.equals,
-        unfilteredLabel: t('Any'),
-        selects: [
-          { label: t('Published'), value: true },
-          { label: t('Draft'), value: false },
-        ],
-      },
-      ...(props.user.userId ? [favoritesFilter] : []),
-      {
-        Header: t('Certified'),
-        id: 'id',
-        urlDisplay: 'certified',
-        input: 'select',
-        operator: FilterOperator.dashboardIsCertified,
-        unfilteredLabel: t('Any'),
-        selects: [
-          { label: t('Yes'), value: true },
-          { label: t('No'), value: false },
-        ],
-      },
-      {
-        Header: t('Search'),
-        id: 'dashboard_title',
-        input: 'search',
-        operator: FilterOperator.titleOrSlug,
-      },
-    ],
-    [addDangerToast, favoritesFilter, props.user],
+          paginate: true,
+        },
+        {
+          Header: t('Status'),
+          id: 'published',
+          input: 'select',
+          operator: FilterOperator.equals,
+          unfilteredLabel: t('Any'),
+          selects: [
+            { label: t('Published'), value: true },
+            { label: t('Draft'), value: false },
+          ],
+        },
+        ...(props.user.userId ? [favoritesFilter] : []),
+        {
+          Header: t('Certified'),
+          id: 'id',
+          urlDisplay: 'certified',
+          input: 'select',
+          operator: FilterOperator.dashboardIsCertified,
+          unfilteredLabel: t('Any'),
+          selects: [
+            { label: t('Yes'), value: true },
+            { label: t('No'), value: false },
+          ],
+        },
+        {
+          Header: t('Search'),
+          id: 'dashboard_title',
+          input: 'search',
+          operator: FilterOperator.titleOrSlug,
+        },
+      ].filter((f: Filter) => !f.hidden),
+    [addDangerToast, isAdmin, favoritesFilter, props.user],
   );
 
   const sortTypes = [
