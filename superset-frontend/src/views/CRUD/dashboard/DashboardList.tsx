@@ -520,7 +520,7 @@ function DashboardList(props: DashboardListProps) {
           input: 'search',
           operator: FilterOperator.titleOrSlug,
         },
-      ].filter((f: Filter) => !f.hidden),
+      ].filter((f: Filter): f is Filter => !f.hidden),
     [addDangerToast, isAdmin, favoritesFilter, props.user],
   );
 
