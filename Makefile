@@ -1,111 +1,75 @@
-#
-# Licensed to the Apache Software Foundation (ASF) under one or more
-# contributor license agreements.  See the NOTICE file distributed with
-# this work for additional information regarding copyright ownership.
-# The ASF licenses this file to You under the Apache License, Version 2.0
-# (the "License"); you may not use this file except in compliance with
-# the License.  You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
 
-# Python version installed; we need 3.7-3.9
-PYTHON=`command -v python3.9 || command -v python3.8 || command -v python3.7`
+REGION := $(AWS_REGION)
+ifeq ($(REGION),)
+REGION := $(shell aws configure get region)
+endif
 
-.PHONY: install superset venv pre-commit
+IMAGE_NAME := $(shell basename $(shell pwd))
+ACCOUNT_ID := $(shell aws sts get-caller-identity |  python3 -c "import sys, json; print(json.load(sys.stdin)[\"Account\"])")
 
-install: superset pre-commit
+REPO_URL := "$(ACCOUNT_ID).dkr.ecr.$(REGION).amazonaws.com/$(IMAGE_NAME)"
+TAG := $(shell git log --pretty=format:%h -n 1)
+export DOCKER_IMAGE_NAME=$(IMAGE_NAME)
 
-superset:
-	# Install external dependencies
-	pip install -r requirements/local.txt
+.PHONY: all
+all: dev
 
-	# Install Superset in editable (development) mode
-	pip install -e .
 
-	# Create an admin user in your metadata database
-	superset fab create-admin \
-                    --username admin \
-                    --firstname Admin \
-                    --lastname Strator \
-                    --email admin@superset.io \
-                    --password general
+.PHONY: build
 
-	# Initialize the database
-	superset db upgrade
+build:
+	@echo "***Build images***"
+	@export DOCKER_IMAGE_NAME=$(IMAGE_NAME)
+	docker-compose -f docker-compose-cp.yml build
+	docker image prune --force  
+	@echo "***Build images completed***"
 
-	# Create default roles and permissions
-	superset init
+.PHONY: repo
+repo:
+	@echo "***Login to ecr***"
+	@-aws --region $(REGION) ecr get-login-password | docker login --password-stdin --username AWS $(ACCOUNT_ID).dkr.ecr.$(REGION).amazonaws.com || :
+	@echo "***Create prod repo***"
+	-aws ecr create-repository --repository-name  $(IMAGE_NAME) || :
 
-	# Load some data to play with
-	superset load-examples
 
-	# Install node packages
-	cd superset-frontend; npm install
+.PHONY: dev
+dev: build push-dev
 
-update: update-py update-js
 
-update-py:
-	# Install external dependencies
-	pip install -r requirements/local.txt
+.PHONY: prod
+prod: build push-prod
 
-	# Install Superset in editable (development) mode
-	pip install -e .
 
-	# Initialize the database
-	superset db upgrade
+.PHONY: local
+local: build
+	
 
-	# Create default roles and permissions
-	superset init
+.PHONY: push-dev
+push-dev: repo
+	@echo "***Tag dev images***"
+	docker tag  $(IMAGE_NAME):latest $(REPO_URL):dev-$(TAG)
+	docker tag  $(IMAGE_NAME):latest $(REPO_URL):dev-latest
+	@echo "***Push dev image***"
+	docker push $(REPO_URL):dev-$(TAG)
+	docker push $(REPO_URL):dev-latest
+	@echo "***Push dev image completed***"
 
-update-js:
-	# Install js packages
-	cd superset-frontend; npm ci
 
-venv:
-	# Create a virtual environment and activate it (recommended)
-	if ! [ -x "${PYTHON}" ]; then echo "You need Python 3.7, 3.8 or 3.9 installed"; exit 1; fi
-	test -d venv || ${PYTHON} -m venv venv # setup a python3 virtualenv
-	. venv/bin/activate
+.PHONY: push-prod
+push-prod: repo
+	@echo "***Tag Prod images***"
+	docker tag  $(IMAGE_NAME):latest $(REPO_URL):prod-$(TAG)
+	docker tag  $(IMAGE_NAME):latest $(REPO_URL):prod-latest
+	@echo "***Push Prod image***"
+	docker push $(REPO_URL):prod-$(TAG)
+	docker push $(REPO_URL):prod-latest
+	@echo "***Push prod image completed***"
 
-activate:
-	. venv/bin/activate
 
-pre-commit:
-	# setup pre commit dependencies
-	pip3 install -r requirements/integration.txt
-	pre-commit install
-
-format: py-format js-format
-
-py-format: pre-commit
-	pre-commit run black --all-files
-
-py-lint: pre-commit
-	pylint -j 0 superset
-
-js-format:
-	cd superset-frontend; npm run prettier
-
-flask-app:
-	flask run -p 8088 --with-threads --reload --debugger
-
-node-app:
-	cd superset-frontend; npm run dev-server
-
-build-cypress:
-	cd superset-frontend; npm run build-instrumented
-	cd superset-frontend/cypress-base; npm install
-
-open-cypress:
-	if ! [ $(port) ]; then cd superset-frontend/cypress-base; CYPRESS_BASE_URL=http://localhost:9000 npm run cypress open; fi
-	cd superset-frontend/cypress-base; CYPRESS_BASE_URL=http://localhost:$(port) npm run cypress open
-
-admin-user:
-	superset fab create-admin
+.PHONY: run
+run: 
+	docker-compose -f docker-compose.yml up
+	
+.PHONY: clean
+clean:
+	docker system prune -f -a
