@@ -5,6 +5,7 @@ services:
     image: $DOCKER_IMAGE_NAME
     build: 
        context: .
+       dockerfile: Dockerfile-cp
 
     volumes:
       - /tmp:/tmp

@@ -1,0 +1,6 @@
+# simple docker file for postgres client
+FROM apache/superset
+
+USER superset
+COPY ./superset/static/assets/ /app/superset/static/assets
+COPY ./superset-frontend /app/superset-frontend
