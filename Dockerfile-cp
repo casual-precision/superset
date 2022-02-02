@@ -3,4 +3,5 @@ FROM apache/superset
 
 USER superset
 COPY ./superset/static/assets/ /app/superset/static/assets
+COPY ./superset/config.py /app/superset/
 COPY ./superset-frontend /app/superset-frontend
