@@ -56,6 +56,7 @@ import InfoTooltip from 'src/components/InfoTooltip';
 import ImportModelsModal from 'src/components/ImportModal/index';
 import { isFeatureEnabled, FeatureFlag } from 'src/featureFlags';
 import WarningIconWithTooltip from 'src/components/WarningIconWithTooltip';
+import { UserWithPermissionsAndRoles } from 'src/types/bootstrapTypes';
 import AddDatasetModal from './AddDatasetModal';
 import {
   PAGE_SIZE,
@@ -97,11 +98,7 @@ type Dataset = {
 interface DatasetListProps {
   addDangerToast: (msg: string) => void;
   addSuccessToast: (msg: string) => void;
-  user: {
-    userId: string | number;
-    firstName: string;
-    lastName: string;
-  };
+  user: UserWithPermissionsAndRoles;
 }
 
 const DatasetList: FunctionComponent<DatasetListProps> = ({
@@ -154,6 +151,8 @@ const DatasetList: FunctionComponent<DatasetListProps> = ({
   const canDelete = hasPerm('can_write');
   const canCreate = hasPerm('can_write');
   const canExport = hasPerm('can_export');
+
+  const isAdmin = !!user?.roles?.Admin;
 
   const initialSort = SORT_BY;
 
@@ -419,6 +418,7 @@ const DatasetList: FunctionComponent<DatasetListProps> = ({
         id: 'owners',
         input: 'select',
         operator: FilterOperator.relationManyMany,
+        disabled: !isAdmin,
         unfilteredLabel: 'All',
         fetchSelects: createFetchRelated(
           'dataset',

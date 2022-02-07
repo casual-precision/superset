@@ -28,6 +28,7 @@ interface SelectFilterProps extends BaseFilter {
   name?: string;
   onSelect: (selected: SelectOption | undefined) => void;
   paginate?: boolean;
+  disabled?: boolean;
   selects: Filter['selects'];
 }
 
@@ -36,6 +37,7 @@ function SelectFilter({
   name,
   fetchSelects,
   initialValue,
+  disabled,
   onSelect,
   selects = [],
 }: SelectFilterProps) {
@@ -55,7 +57,7 @@ function SelectFilter({
 
   const fetchAndFormatSelects = useMemo(
     () => async (inputValue: string, page: number, pageSize: number) => {
-      if (fetchSelects) {
+      if (fetchSelects && !disabled) {
         const selectValues = await fetchSelects(inputValue, page, pageSize);
         return {
           data: selectValues.data,
@@ -67,12 +69,13 @@ function SelectFilter({
         totalCount: 0,
       };
     },
-    [fetchSelects],
+    [fetchSelects, disabled],
   );
 
   return (
     <FilterContainer>
       <Select
+        disabled={disabled}
         allowClear
         ariaLabel={typeof Header === 'string' ? Header : name || t('Filter')}
         labelInValue
