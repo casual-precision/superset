@@ -60,6 +60,7 @@ import { nativeFilterGate } from 'src/dashboard/components/nativeFilters/utils';
 import setupPlugins from 'src/setup/setupPlugins';
 import InfoTooltip from 'src/components/InfoTooltip';
 import CertifiedBadge from 'src/components/CertifiedBadge';
+import { UserWithPermissionsAndRoles } from 'src/types/bootstrapTypes';
 import ChartCard from './ChartCard';
 
 const FlexRowContainer = styled.div`
@@ -134,11 +135,7 @@ const createFetchDatasets = async (
 interface ChartListProps {
   addDangerToast: (msg: string) => void;
   addSuccessToast: (msg: string) => void;
-  user: {
-    userId: string | number;
-    firstName: string;
-    lastName: string;
-  };
+  user: UserWithPermissionsAndRoles;
 }
 
 const Actions = styled.div`
@@ -206,6 +203,8 @@ function ChartList(props: ChartListProps) {
   const canExport =
     hasPerm('can_export') && isFeatureEnabled(FeatureFlag.VERSIONED_EXPORT);
   const initialSort = [{ id: 'changed_on_delta_humanized', desc: true }];
+
+  const isAdmin = !!props.user?.roles?.Admin;
 
   const handleBulkChartExport = (chartsToExport: Chart[]) => {
     const ids = chartsToExport.map(({ id }) => id);
@@ -481,6 +480,7 @@ function ChartList(props: ChartListProps) {
         id: 'owners',
         input: 'select',
         operator: FilterOperator.relationManyMany,
+        disabled: !isAdmin,
         unfilteredLabel: t('All'),
         fetchSelects: createFetchRelated(
           'chart',
@@ -502,6 +502,7 @@ function ChartList(props: ChartListProps) {
         id: 'created_by',
         input: 'select',
         operator: FilterOperator.relationOneMany,
+        disabled: !isAdmin,
         unfilteredLabel: t('All'),
         fetchSelects: createFetchRelated(
           'chart',
@@ -572,7 +573,7 @@ function ChartList(props: ChartListProps) {
         operator: FilterOperator.chartAllText,
       },
     ],
-    [addDangerToast, favoritesFilter, props.user],
+    [addDangerToast, favoritesFilter, props.user, isAdmin],
   );
 
   const sortTypes = [

@@ -42,7 +42,7 @@ export interface Filter {
   id: string;
   urlDisplay?: string;
   operator?: FilterOperator;
-  hidden?: boolean;
+  disabled?: boolean;
   input?:
     | 'text'
     | 'textarea'

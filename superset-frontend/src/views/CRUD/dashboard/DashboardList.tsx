@@ -446,83 +446,82 @@ function DashboardList(props: DashboardListProps) {
   );
 
   const filters: Filters = useMemo(
-    () =>
-      [
-        {
-          Header: t('Owner'),
-          id: 'owners',
-          hidden: !isAdmin,
-          input: 'select',
-          operator: FilterOperator.relationManyMany,
-          unfilteredLabel: t('All'),
-          fetchSelects: createFetchRelated(
-            'dashboard',
-            'owners',
-            createErrorHandler(errMsg =>
-              addDangerToast(
-                t(
-                  'An error occurred while fetching dashboard owner values: %s',
-                  errMsg,
-                ),
+    () => [
+      {
+        Header: t('Owner'),
+        id: 'owners',
+        input: 'select',
+        operator: FilterOperator.relationManyMany,
+        unfilteredLabel: t('All'),
+        disabled: !isAdmin,
+        fetchSelects: createFetchRelated(
+          'dashboard',
+          'owners',
+          createErrorHandler(errMsg =>
+            addDangerToast(
+              t(
+                'An error occurred while fetching dashboard owner values: %s',
+                errMsg,
               ),
             ),
-            props.user,
           ),
-          paginate: true,
-        },
-        {
-          Header: t('Created by'),
-          id: 'created_by',
-          hidden: !isAdmin,
-          input: 'select',
-          operator: FilterOperator.relationOneMany,
-          unfilteredLabel: t('All'),
-          fetchSelects: createFetchRelated(
-            'dashboard',
-            'created_by',
-            createErrorHandler(errMsg =>
-              addDangerToast(
-                t(
-                  'An error occurred while fetching dashboard created by values: %s',
-                  errMsg,
-                ),
+          props.user,
+        ),
+        paginate: true,
+      },
+      {
+        Header: t('Created by'),
+        id: 'created_by',
+        input: 'select',
+        operator: FilterOperator.relationOneMany,
+        disabled: !isAdmin,
+        unfilteredLabel: t('All'),
+        fetchSelects: createFetchRelated(
+          'dashboard',
+          'created_by',
+          createErrorHandler(errMsg =>
+            addDangerToast(
+              t(
+                'An error occurred while fetching dashboard created by values: %s',
+                errMsg,
               ),
             ),
-            props.user,
           ),
-          paginate: true,
-        },
-        {
-          Header: t('Status'),
-          id: 'published',
-          input: 'select',
-          operator: FilterOperator.equals,
-          unfilteredLabel: t('Any'),
-          selects: [
-            { label: t('Published'), value: true },
-            { label: t('Draft'), value: false },
-          ],
-        },
-        ...(props.user.userId ? [favoritesFilter] : []),
-        {
-          Header: t('Certified'),
-          id: 'id',
-          urlDisplay: 'certified',
-          input: 'select',
-          operator: FilterOperator.dashboardIsCertified,
-          unfilteredLabel: t('Any'),
-          selects: [
-            { label: t('Yes'), value: true },
-            { label: t('No'), value: false },
-          ],
-        },
-        {
-          Header: t('Search'),
-          id: 'dashboard_title',
-          input: 'search',
-          operator: FilterOperator.titleOrSlug,
-        },
-      ].filter((f: Filter): f is Filter => !f.hidden),
+          props.user,
+        ),
+        paginate: true,
+      },
+      {
+        Header: t('Status'),
+        id: 'published',
+        input: 'select',
+        operator: FilterOperator.equals,
+        unfilteredLabel: t('Any'),
+        selects: [
+          { label: t('Published'), value: true },
+          { label: t('Draft'), value: false },
+        ],
+      },
+      ...(props.user.userId ? [favoritesFilter] : []),
+      {
+        Header: t('Certified'),
+        id: 'id',
+        urlDisplay: 'certified',
+        input: 'select',
+        operator: FilterOperator.dashboardIsCertified,
+        unfilteredLabel: t('Any'),
+        selects: [
+          { label: t('Yes'), value: true },
+          { label: t('No'), value: false },
+        ],
+      },
+      {
+        Header: t('Search'),
+        id: 'dashboard_title',
+        input: 'search',
+        operator: FilterOperator.titleOrSlug,
+      },
+    ],
     [addDangerToast, isAdmin, favoritesFilter, props.user],
   );
 
