@@ -43,17 +43,13 @@ function UIFilters({
   return (
     <>
       {filters.map(
-        (
-          { Header, fetchSelects, id, input, paginate, disabled, selects },
-          index,
-        ) => {
+        ({ Header, fetchSelects, id, input, paginate, selects }, index) => {
           const initialValue =
             internalFilters[index] && internalFilters[index].value;
           if (input === 'select') {
             return (
               <SelectFilter
                 Header={Header}
-                disabled={disabled}
                 fetchSelects={fetchSelects}
                 initialValue={initialValue}
                 key={id}
