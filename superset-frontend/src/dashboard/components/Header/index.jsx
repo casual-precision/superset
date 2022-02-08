@@ -541,7 +541,6 @@ class Header extends React.PureComponent {
             />
           )}
         </div>
-
         <div className="button-container">
           {userCanSaveAs && (
             <div
