@@ -29,5 +29,5 @@ COPY --from=superset-node /app/superset/static/assets /app/superset/static/asset
 COPY --from=superset-node /app/superset-frontend /app/superset-frontend
 #COPY ./superset/static/assets/images /app/superset/static/assets/images
 COPY ./superset/config.py /app/superset/
-#COPY ./superset-frontend /app/superset-frontend
+
 
